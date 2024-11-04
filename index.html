@@ -49,7 +49,7 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(255,255,255,0.1);
-            max-height: 200px;
+            max-height: 400px; /* Daha fazla yüksekliği desteklemek için artırıldı */
             overflow-y: auto;
             width: 80%;
             max-width: 600px;
@@ -93,6 +93,21 @@
             font-size: 18px;
             margin-top: 20px;
         }
+        /* Reset Butonu Stilleri */
+        .reset-button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #ff5555;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+        }
+        .reset-button:hover {
+            background-color: #ff0000;
+        }
     </style>
 </head>
 <body>
@@ -107,6 +122,8 @@
         <ul class="history-list" id="history-list">
             <!-- Geçmiş sorular buraya eklenecek -->
         </ul>
+        <!-- Resetleme Butonu Eklendi -->
+        <button class="reset-button" id="reset-button">Geçmişi Sıfırla</button>
     </div>
 
     <script>
@@ -192,7 +209,7 @@
         // Geçmiş soruları depolamak için localStorage anahtarları
         const HISTORY_KEY = 'questionHistory';
         const CHECKBOXES_KEY = 'questionCheckboxes';
-        const MAX_HISTORY = 10; // Maksimum gösterilecek geçmiş soru sayısı
+        const MAX_HISTORY = 75; // Maksimum gösterilecek geçmiş soru sayısı artırıldı
 
         // Checkbox durumlarını yükle
         let questionCheckboxes = JSON.parse(localStorage.getItem(CHECKBOXES_KEY)) || {};
@@ -319,19 +336,36 @@
 
             // Eğer tüm sorular hariç tutulmuşsa kullanıcıya bildirim göster
             const noQuestionsMsg = document.getElementById('no-questions-msg');
-            if (!noQuestionsMsg && history.length > 0) {
-                const totalExcluded = questions.filter(q => {
-                    const checkboxes = questionCheckboxes[q.title];
-                    return checkboxes && checkboxes.some(cb => cb);
-                }).length;
-                if (totalExcluded === questions.length) {
+            const totalExcluded = questions.filter(q => {
+                const checkboxes = questionCheckboxes[q.title];
+                return checkboxes && checkboxes.some(cb => cb);
+            }).length;
+
+            if (totalExcluded === questions.length) {
+                if (!noQuestionsMsg) {
                     const msg = document.createElement('div');
                     msg.className = 'no-questions';
                     msg.id = 'no-questions-msg';
                     msg.textContent = "Tüm sorular hariç tutulmuş. Herhangi bir checkbox'u işaretlemeyerek yeniden sorular görüntüleyebilirsiniz.";
                     document.body.appendChild(msg);
                 }
+            } else {
+                if (noQuestionsMsg) {
+                    noQuestionsMsg.remove();
+                }
             }
+        }
+
+        // Geçmişi ve checkbox durumlarını sıfırla
+        function resetHistory() {
+            // localStorage'daki geçmiş ve checkbox durumlarını temizle
+            localStorage.removeItem(HISTORY_KEY);
+            localStorage.removeItem(CHECKBOXES_KEY);
+            questionCheckboxes = {};
+
+            // Arayüzü güncelle
+            displayHistory();
+            initialize(); // Yeni bir soru seçmek için initialize fonksiyonunu tekrar çağır
         }
 
         // Sayfa yüklendiğinde ve her yeni soru seçildiğinde çalışacak fonksiyon
@@ -358,7 +392,17 @@
         }
 
         // Sayfa yüklendiğinde initialize fonksiyonunu çağır
-        window.onload = initialize;
+        window.onload = () => {
+            initialize();
+
+            // Reset butonuna tıklama olayını ekle
+            const resetButton = document.getElementById('reset-button');
+            resetButton.addEventListener('click', () => {
+                if (confirm("Geçmişi ve hariç tutulan soruları sıfırlamak istediğinizden emin misiniz?")) {
+                    resetHistory();
+                }
+            });
+        };
     </script>
 </body>
 </html>
